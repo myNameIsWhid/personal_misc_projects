@@ -43,7 +43,7 @@ def quad(start,size,starting_point,order,map):
             map[int(squares[i])] = starting_points[i]
           
           
-size = 1024
+size = 32
 
 
 map = list()
@@ -66,31 +66,32 @@ image_data.fill(0)
 
             
 frames = list()
-video = cv2.VideoWriter("Hilbert\output.avi", cv2.VideoWriter_fourcc(*'DIVX'), 120, (size * 3, size * 3))
+video = cv2.VideoWriter("output_h.avi", cv2.VideoWriter_fourcc(*'DIVX'), 120, (size * 3, size * 3))
 
 for i in range((size**2)):
+    print(i/(size**2))
     x = int(map[i][0])
     y = int(map[i][1])
     image_data[(y * 3)][(x * 3)] = [255 * (i/size**2),0,255 * (((size**2)-i)/size**2)]
-    frames.append(Image.fromarray(image_data))
+    #frames.append(Image.fromarray(image_data))
     video.write(image_data)
     if i < (size**2) - 1:
         for j in range(1,3):
             if map[i][0] < map[i + 1][0]:
                 image_data[(y * 3)][(x * 3) + j] = [255 * (i/size**2),0,255 * (((size**2)-i)/size**2)]
-                frames.append(Image.fromarray(image_data))
+               # frames.append(Image.fromarray(image_data))
                 video.write(image_data)
             if map[i][0] > map[i + 1][0]:
                 image_data[(y * 3)][(x * 3) - j] = [255 * (i/size**2),0,255 * (((size**2)-i)/size**2)]
-                frames.append(Image.fromarray(image_data))
+               # frames.append(Image.fromarray(image_data))
                 video.write(image_data)
             if map[i][1] > map[i + 1][1]:
                 image_data[(y * 3) - j][(x * 3)] = [255 * (i/size**2),0,255 * (((size**2)-i)/size**2)]
-                frames.append(Image.fromarray(image_data))
+               # frames.append(Image.fromarray(image_data))
                 video.write(image_data)
             if map[i][1] < map[i + 1][1]:
                 image_data[(y * 3) + j][(x * 3)] = [255 * (i/size**2),0,255 * (((size**2)-i)/size**2)]
-                frames.append(Image.fromarray(image_data))
+               # frames.append(Image.fromarray(image_data))
                 video.write(image_data)
     
         
@@ -98,16 +99,16 @@ for i in range((size**2)):
     # frames.append(Image.fromarray(image_data))
 
 
-frames[0].save(
-        'Hilbert\output.gif',
-        save_all=True,
-        append_images=frames[1:],
-        duration=1,  # Duration of each frame in milliseconds
-        loop=0      # 0 means loop indefinitely
-    )
+# frames[0].save(
+#         'Hilbert\output.gif',
+#         save_all=True,
+#         append_images=frames[1:],
+#         duration=1,  # Duration of each frame in milliseconds
+#         loop=0      # 0 means loop indefinitely
+#     )
 
 video.release()
-    
+print("DONE!")
     
     #starting_points = [starting_point,[starting_point[0] + h_size,starting_point[1]],[starting_point[0] + h_size,starting_point[1] + h_size],[starting_point[0],starting_point[1] + h_size]]
    
