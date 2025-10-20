@@ -42,6 +42,7 @@ def quad(start,size,starting_point,order,map):
         for i,o in enumerate(order):   
             map[int(squares[i])] = starting_points[i]
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
           
           
 size = 32
@@ -91,6 +92,12 @@ for i in range((size**2)):
                # frames.append(Image.fromarray(image_data))
                 video.write(image_data)
 =======
+=======
+size = 4  
+quad(0,size,[0,0],[0,1,2,3],map)
+          
+frames = list()
+>>>>>>> Stashed changes
 width = 0
 min = 4
 max = 4
@@ -101,6 +108,9 @@ for i in range(min,max + 1):
 mx = 0
 for i in range(min,max + 1):
     mx += int(2**i)**2
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     
 print(mx,"mx")
@@ -114,6 +124,41 @@ for s in range(min,max + 1):
     map = list()
     for i in range(size * size):
         map.append(0)
+<<<<<<< Updated upstream
+=======
+
+
+    quad(0,size,[0,0],[0,1,2,3],map)
+
+    
+    
+    for i in range((size**2)):
+        if float(f"{(i/(size**2)) * 100:.2f}") % 10.00 == 0:
+            print(f"{(i/(size**2)) * 100:.2f}")
+        x = int(map[i][0])
+        y = int(map[i][1])
+        yajust = maxy - (size * 3)
+        color =  [255 * ((i)/(size**2)),0,255 * (((size**2) - (i))/((size**2)))] #[255 * ((i + w)/(mx)),0,255 * ((mx - (i + w))/(mx))]
+        image_data[(y * 3) + yajust][(x * 3) + width] = color 
+        frames.append(Image.fromarray(image_data))
+        if i < (size**2) - 1:
+            for j in range(1,3):
+                if map[i][0] < map[i + 1][0]:
+                    image_data[(y * 3) + yajust][(x * 3) + j + width] = color 
+                    frames.append(Image.fromarray(image_data))
+                if map[i][0] > map[i + 1][0]:
+                    image_data[(y * 3)+ yajust][(x * 3) - j + width] =color 
+                    frames.append(Image.fromarray(image_data))
+                if map[i][1] > map[i + 1][1]:
+                    image_data[(y * 3) - j+ yajust][(x * 3) + width] =color 
+                    frames.append(Image.fromarray(image_data))
+                if map[i][1] < map[i + 1][1]:
+                    image_data[(y * 3) + j+ yajust][(x * 3) + width] = color 
+        #frames.append(Image.fromarray(image_data))
+    #frames.append(Image.fromarray(image_data))
+    width += (size * 3) - 1
+    w += size**2
+>>>>>>> Stashed changes
 
 
     quad(0,size,[0,0],[0,1,2,3],map)
