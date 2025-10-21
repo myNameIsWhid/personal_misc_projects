@@ -329,20 +329,23 @@ def opimize_pairs_iterativly(pool1,pool2,pairs):
     print(score," Before")
     swaps = list()
     with Bar('Processing...') as bar:  
-        max = 9999999999
+        max = 2000000
         bar.max = max
         i = 0
         while(True):
             bar.next()
-            swap_size = 1
+      
             i += 1
-            if i % 2000000 == 0:
+            if i % max  == 0:
+                bar.index = 0
                 new_score = 0
                 for i in range(len(pairs)):
                     new_score += get_compatibility(pairs[i][0],pairs[i][1])
                 print("Improved by",(100 * (new_score - score))/(score + 1))
                 score = new_score
                 make_image()
+                
+            swap_size = np.random.randint(1)
             
             indexs = [[np.random.randint(swap_size,size - swap_size),np.random.randint(swap_size,size - swap_size)]
                       ,[np.random.randint(swap_size,size - swap_size),np.random.randint(swap_size,size - swap_size)]]
