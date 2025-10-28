@@ -13,15 +13,11 @@ def get_similarity_of_colors(color1,color2):
 def get_dist(point1,point2):
    return (((point2[0]-point1[0])**2) + ((point2[1]-point1[1])**2))**(1/2)
 
-def get_compatibility(pixel1,pixel2):
-    color_weight = 1
-    if get_dist(pixel1[0],pixel2[0]) != 0:
-        return (color_weight * ((255 - get_similarity_of_colors(pixel1[1],pixel2[1]))))#/get_dist(pixel1[0],pixel2[0])
-    else:
-        return (color_weight * (255 - get_similarity_of_colors(pixel1[1],pixel2[1])))
 
-image1 = Image.open("ImageMorph/fall_1024.png")
-image2 = Image.open("ImageMorph/night_1024.png")
+
+
+image1 = Image.open("ImageMorph/fall_256.png")
+image2 = Image.open("ImageMorph/night_256.png")
 
 
 
@@ -29,6 +25,14 @@ data1 =  np.asarray(image1)
 data2 = np.asarray(image2)
 
 size = len(data1)
+
+maxdist = get_dist([0,0],[size-1,size-1])
+def get_compatibility(pixel1,pixel2):
+    color_weight = 0.8
+    dist_weight = 0.2
+    return (color_weight * ((255 - get_similarity_of_colors(pixel1[1],pixel2[1]))/255)) - (dist_weight * ((get_dist(pixel1[0],pixel2[0])/maxdist)))
+
+
 
 video = cv2.VideoWriter("ImageMorph/output.avi", cv2.VideoWriter_fourcc(*'DIVX'), 120, (size * 2 , size))
 
@@ -58,6 +62,13 @@ for x in range(len(data2)):
 print("Initial Pairing") 
 
 max_dist = 4
+
+def clamp(num,min,max):
+    if num < min:
+        return min
+    if num > max:
+        return max
+    return num
 
 def video_add_frame():
     morph_data1 = np.empty((len(data1),len(data2),3),dtype=np.uint8)
@@ -124,7 +135,124 @@ def make_image(kind = 2):
     else:
         morph2.save("ImageMorph/morph2.png")
         
+def make_morph_gif():
+    
+    frame1 = np.empty((len(data1),len(data2),3),dtype=np.uint8)
+    frame1.fill(255)  
+    frame2 = np.empty((len(data1),len(data2),3),dtype=np.uint8)
+    frame2.fill(255)  
+    background = np.empty((len(data1),len(data2),3),dtype=np.uint8)
+    background.fill(255) 
+    
+    for pair in pairs:
+        for j in range(3):
+            frame1[pair[0][0][0]][pair[0][0][1]][j] = pair[0][1][j]
+            frame2[pair[1][0][0]][pair[1][0][1]][j] = pair[1][1][j]
+            background[pair[1][0][0]][pair[1][0][1]][j] = pair[1][1][j]
+            
+    
+    
+     
+            
+    # frame1 = Image.fromarray(frame1)
+    # frame1.show()
+        
+    print(pairs[0][0][0][0])
 
+    padding = 50
+    
+    maxtime = 50
+    
+    moving_pixels = list()
+    pixel_pos = list()
+    frames = []
+    for i, pair in enumerate(pairs):
+        moving_pixels.append([pair,get_dist(pair[0][0],pair[1][0]),math.atan2(pair[1][0][1] - pair[0][0][1],pair[1][0][0] - pair[0][0][0])])
+        pixel_pos.append([pair[0][0][0],pair[0][0][1]])
+
+    with Bar('Making Gif...') as bar:  
+        
+        bar.max = maxtime
+        for time in range(maxtime):
+            bar.next()
+            frame = np.empty((len(data1),len(data2),3),dtype=np.uint8)
+            frame.fill(0)  
+            
+    
+            # update pos
+            for i,moving_pixel in enumerate(moving_pixels):
+                x = clamp(round(pixel_pos[i][0]),0,size - 1)
+                y = clamp(round(pixel_pos[i][1]),0,size - 1)
+                for j in range(3):
+                    frame[x][y][j] = moving_pixel[0][1][1][j] * (time/maxtime) + moving_pixel[0][0][1][j] * ((maxtime- time)/maxtime)
+                pixel_pos[i][0] += math.cos(moving_pixel[2]) * (moving_pixel[1]/maxtime)
+                pixel_pos[i][1] += math.sin(moving_pixel[2]) * (moving_pixel[1]/maxtime)
+            
+            holes = np.empty((len(data1),len(data2)))
+            holes.fill(False)  
+            
+            # for y in range(size):
+            #     for x in range(size):   
+            #         is_black = True
+                    
+            #         for n in range(3):
+            #             if frame[x][y][n] != 0:
+            #                 is_black = False
+                            
+            #         if is_black:
+            #             holes[x][y] = True
+            #             width = 1
+            #             found = False
+            #             while(not found):
+
+                            
+            #                 bounds = [[x - width,x + width],[y - width,y + width]]
+            #                 for y1 in range(bounds[1][0], bounds[1][1] + 1):
+            #                     if y1 < 0:
+            #                         continue
+            #                     if y1 >= size:
+            #                         break
+            #                     for x1 in range(bounds[0][0],bounds[0][1] + 1):   
+            #                         if x1 < 0:
+            #                             continue
+            #                         if x1 >= size:
+            #                             break
+            #                         if not(x1 == bounds[0][0] or x1 == bounds[0][1] or y1 == bounds[1][0] or y1 == bounds[1][1]):
+            #                             continue
+                                    
+            #                         is_black = True
+            #                         for j in range(3):
+            #                              if frame[x1][y1][j] != 0:
+            #                                  is_black = False
+                                             
+            #                         if not is_black and not holes[x1][y1]:
+            #                             found = True
+            #                             for k in range(3):
+            #                                 frame[x][y][k] = frame[x1][y1][k]
+            #                 width += 1
+                
+            frames.append(Image.fromarray(frame))
+            
+    
+    
+    for i in range(padding):
+        frames.insert(0,Image.fromarray(frame1))
+        frames.append(Image.fromarray(frame2))
+    
+    frames[0].save(
+        'ImageMorph/output.gif',
+        save_all=True,
+        append_images=frames[1:] + list(reversed(frames[0:])),
+        duration=10,  # Duration of each frame in milliseconds
+        loop=0      # 0 means loop indefinitely
+    )
+    print("Done!")
+        
+        
+    
+    
+    
+    
     
 def pair_opimtmally_and_resolve_conflicts(pool1,pool2,pairs):
     # compatibility_avg = 0
@@ -306,10 +434,10 @@ def opimize_pairs_iterativly(pool1,pool2,pairs):
     
     # Shuffle
   
-    # n_pool1 = list()
-    # for i in range(len(pool1)):
-    #     n_pool1.append(pool1.pop(np.random.randint(0,len(pool1))))
-    # pool1 = n_pool1
+    n_pool1 = list()
+    for i in range(len(pool1)):
+        n_pool1.append(pool1.pop(np.random.randint(0,len(pool1))))
+    pool1 = n_pool1
     
     compatibilites = list()
     
@@ -367,7 +495,7 @@ def opimize_pairs_iterativly(pool1,pool2,pairs):
     score = sum(compatibilites)
     swaps = list()
     with Bar('Processing...') as bar:  
-        max = 2000000
+        max = 4000000
         
         bar.max = max
         interval = 0
@@ -380,13 +508,15 @@ def opimize_pairs_iterativly(pool1,pool2,pairs):
                 new_score = 0
                 i = 0
                 # video.release()
+                
                 for i in range(len(pairs)):
                     new_score += get_compatibility(pairs[i][0],pairs[i][1])
                 print("Improved by",(100 * (new_score - score))/(score + 1))
                 score = new_score
                 make_image()
+                make_morph_gif()
                 
-            swap_size = np.random.randint(1,5 + 1)
+            swap_size = 1
             indexs = [[np.random.randint(0,size - swap_size + 1),np.random.randint(0,size - swap_size + 1)]
                       ,[np.random.randint(0,size - swap_size + 1),np.random.randint(0,size - swap_size + 1)]]
             
@@ -438,7 +568,7 @@ def opimize_pairs_iterativly(pool1,pool2,pairs):
 # pair_opimtmally_and_resolve_conflicts(pool1,pool2,pairs)
 
 opimize_pairs_iterativly(pool1,pool2,pairs)
-    
+make_morph_gif()
         
 
         
