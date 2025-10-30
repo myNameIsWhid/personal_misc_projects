@@ -13,7 +13,7 @@ def rainbow(i,length = 1):
         
     red = 0
     if i < length/6:
-        red = 255 #
+        red = 255 
     elif i >= length/6 and i < length/3:
         red  = max((((length/3) - i)/(length/6)) * 255,0)
     elif i >= 2 * length/3 and i < 5 * length/6:
@@ -45,7 +45,7 @@ def to_radian(num):
         return (2 * math.pi) + num
     return num
 
-# center, radius angle, viewcone
+
 
 
 def is_point_in_sector(sector,point):
