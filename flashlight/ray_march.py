@@ -2,10 +2,17 @@ from math import pi,atan2,cos,sin,ceil
 import numpy as np
 from PIL import Image
 
-sector = [[0.5,0.5],0.45,0,pi/2]
+sector = [[0.5,0.5],0.45,pi/2,pi/2]
 res_rec = [0,0,512,512]
 sim_rec = [0.0,0.0,1,1]
 obstacles = [[[0.2,0.2],[0.2,0.8]]]
+
+def clamp(num,min,max):
+    if num < min:
+        return min
+    if num > max:
+        return max
+    return num
 
 def rainbow(i,length = 1):
     green = 0
@@ -45,6 +52,9 @@ def get_n_colors(n):
 def get_dist(point1,point2):
    return (((point2[0]-point1[0])**2) + ((point2[1]-point1[1])**2))**(1/2)
 
+def get_dist_squared(point1,point2):
+   return ((point2[0]-point1[0])**2) + ((point2[1]-point1[1])**2)
+
 
 def to_radian(num):
     if num > 2 * pi:
@@ -52,6 +62,17 @@ def to_radian(num):
     if num <= 0:
         return (2 * pi) + num
     return num
+
+def quadrant(angle):
+    angle = to_radian(angle)
+    if angle >= 0 and angle < pi/2:
+        return 1
+    if angle >= pi/2 and angle < pi:
+        return 2
+    if angle >= pi and angle < 3 * pi/2:
+        return 3
+    if angle >=  3 * pi/2 and angle < 2 * pi:
+        return 4
 
 # center, radius angle, viewcone
 
@@ -128,7 +149,7 @@ def draw_line(line,image_data,res_rec,sim_rec,color,width = 1):
         max[1] = line[1][1]
         min[1] = line[0][1]
         
-    res = 40
+    res = int(res_rec[3] * 180/512)
 
     angle = atan2(line[1][1] - line[0][1],line[1][0] - line[0][0]) 
     dist = get_dist(max,min)
@@ -148,14 +169,85 @@ def draw_line(line,image_data,res_rec,sim_rec,color,width = 1):
             
             for i in range(res):
                 point_on_line = [line[0][0]+ ((cos(angle) * dist) * (i/res)),line[0][1] + ((sin(angle) * dist) * (i/res))]
-                if get_dist(point_on_line,[x1,y1]) <= width:
+                if get_dist_squared(point_on_line,[x1,y1]) <= width**2:
                     for j in range(3):
                         image_data[x][y][j] = color[j]
                     break
     
-def draw_sector(sector,image_data,res_rec,sim_rec,inside_color,outside_color = [0,0,0]):
-     for y in range(res_rec[3]):
-        for x in range(res_rec[2]):
+def draw_sector(sector,image_data,res_rec,sim_rec,inside_color):
+    theta1 = to_radian(sector[2] + sector[3]/2)
+    theta2 = to_radian(sector[2] - sector[3]/2)
+    theat1_point = [cos(theta1) * sector[1] + sector[0][0],sin(theta1) * sector[1] + sector[0][1]]
+    theat2_point = [cos(theta2) * sector[1] + sector[0][0],sin(theta2) * sector[1] + sector[0][1]]
+    
+    if quadrant(theta1) == 1:
+        if quadrant(theta2) == 1:
+            x_bounds = [sector[0][0],theat2_point[0]]
+            y_bounds = [theat1_point[1],sector[0][1]]
+        elif quadrant(theta2) == 2:
+            x_bounds = [sector[0][0] - sector[0][1],sector[0][0] + sector[1]]
+            y_bounds = [max(theat1_point[1],theat2_point[1]),sector[0][1] + sector[1]]
+        elif quadrant(theta2) == 3:
+            x_bounds = [theat2_point[0],sector[0][0] + sector[1]]
+            y_bounds = [theat1_point[1],sector[0][1] + sector[1]]
+        elif quadrant(theta2) == 4:
+            x_bounds = [sector[0][0],sector[0][0] + sector[1]]
+            y_bounds = [theat1_point[1],theat2_point[1]]
+    elif quadrant(theta1) == 2:
+        if quadrant(theta2) == 1:
+            x_bounds = [theat1_point[0],theat2_point[0]]
+            y_bounds = [sector[0][1] - sector[1],sector[0][1]]
+        elif quadrant(theta2) == 2:
+            x_bounds = [theat1_point[0],sector[0][0]]
+            y_bounds = [theat2_point[1],sector[0][1]]
+        elif quadrant(theta2) == 3:
+            x_bounds = [min(theat2_point[0],theat1_point[0]),sector[0][0] + sector[1]]
+            y_bounds = [sector[0][1] - sector[1],sector[0][1] + sector[1]]
+        elif quadrant(theta2) == 4:
+            x_bounds = [theat1_point[0],sector[0][0] + sector[1]]
+            y_bounds = [sector[0][1] - sector[1],theat2_point[1]]
+    elif quadrant(theta1) == 3:
+        if quadrant(theta2) == 1:
+            x_bounds = [sector[0][0] - sector[1],theat2_point[0]]
+            y_bounds = [sector[0][1] - sector[1],theat1_point[1]]
+        elif quadrant(theta2) == 2:
+            x_bounds = [sector[0][0] - sector[1],sector[0][0]]
+            y_bounds = [theat2_point[1],theat1_point[1]]
+        elif quadrant(theta2) == 3:
+            x_bounds = [theat2_point[0],sector[0][0]]
+            y_bounds = [sector[0][0],theat1_point[1]]
+        elif quadrant(theta2) == 4:
+            x_bounds = [sector[0][0] - sector[1],sector[0][0] + sector[1]]
+            y_bounds = [sector[0][1] - sector[1],max(theat1_point[1],theat2_point[1])]
+    elif quadrant(theta1) == 4:
+         if quadrant(theta2) == 1:
+            x_bounds = [sector[0][0] - sector[1],max(theat1_point[0],theat2_point[0])]
+            y_bounds = [sector[0][1] - sector[1],sector[0][1] + sector[1]]
+         elif quadrant(theta2) == 2:
+            x_bounds = [sector[0][0] - sector[1],theat1_point[0]]
+            y_bounds = [theat2_point[1],sector[0][1] + sector[1]]
+         elif quadrant(theta2) == 3:
+            x_bounds = [theat2_point[0],theat1_point[0]]
+            y_bounds = [sector[0][1],sector[0][1] + sector[1]]
+         elif quadrant(theta2) == 4:
+            x_bounds = [sector[0][0],theat1_point[0]]
+            y_bounds = [sector[0][1],theat2_point[1]]
+            
+            
+            
+            
+        
+
+    
+    
+    
+    # x_bounds = [sector[0][0] - sector[1],sector[0][0] + sector[1]]
+    # y_bounds = [sector[0][1] - sector[1],sector[0][1] + sector[1]]
+     
+     
+    
+    for y in range(int(clamp((y_bounds[0]/sim_rec[3]) * res_rec[3],0,res_rec[3] - 1)),int(clamp(((y_bounds[1] + 1)/sim_rec[3]) * res_rec[3],0,res_rec[3]))):
+        for x in range(int(clamp((x_bounds[0]/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1)),int(clamp(((x_bounds[1] + 1)/sim_rec[2]) * res_rec[2],0,res_rec[2]))):
             x1 = ((x/res_rec[2]) * sim_rec[2]) + sim_rec[0]
             y1 = ((y/res_rec[3]) * sim_rec[3]) + sim_rec[1]
             point = [x1,y1]
@@ -175,12 +267,12 @@ def make_gif(sector,res_rec,sim_rec,frame_count):
 
         image_data = np.empty((res_rec[2],res_rec[3],3),dtype=np.uint8)
         image_data.fill(0)  
-        sector[2] += (4 * pi)/frame_count
-        sector[2] = to_radian(sector[2])
-        sector[3] = sin(((f * 2 * pi)/frame_count) - (pi/2)) * (pi) + pi
+        # sector[2] += (4 * pi)/frame_count
+        # sector[2] = to_radian(sector[2])
+        # sector[3] = sin(((f * 2 * pi)/frame_count) - (pi/2)) * (pi) + pi
         print((f/frame_count) * 100)
 
-        draw_sector(sector,image_data,res_rec,sim_rec,inside_color,outside_color)
+        draw_sector(sector,image_data,res_rec,sim_rec,inside_color)
                         
         lines = approx_sector_with_lines(sector,int(sector[3]//(2*pi/35) + 1))      
         colors  = get_n_colors(int(sector[3]//(2*pi/35) + 3))      
@@ -200,49 +292,66 @@ def make_gif(sector,res_rec,sim_rec,frame_count):
     print("Done!")  
     
 def does_sector_intersect_obstacles(sector):
-    lines = approx_sector_with_lines(sector,int(sector[3]//(2*pi/11) + 1))
+    lines = approx_sector_with_lines(sector,max(int(sector[3]//(2*pi/11) + 1),3))
     for obstacle in obstacles:
         for line in lines:
             if intersect(line,obstacle):
                 return True
     return False
 
-
+def bifurcate_sectors(sectors):
+    bifurcated = []
+    for sector in sectors:
+        bifurcated.append([sector[0],sector[1],to_radian(sector[2] + sector[3]/4),sector[3]/2,sector[4] - 1])
+        bifurcated.append([sector[0],sector[1],to_radian(sector[2] - sector[3]/4),sector[3]/2,sector[4] - 1])
+    return bifurcated
+        
 
 def get_rays(point,angle,viewcone,sim_rec):
-    split_limit = 5
+    split_limit = 7
     sectors = [[point,0,angle,viewcone,split_limit]]
-    tolerance = sim_rec[3]/1000
+    tolerance = 0.0001
 
-    split_amount = 2
+    split_amount = 1
     
     rays = []
     
     while len(sectors) != 0:
         new_sectors = []
         for sector in sectors:
-            march_amount = 0.0001
+            march_amount = min(sim_rec[3],sim_rec[2])
             
             if sector[4] == 0:
                 rays.append(sector)
                 continue
 
             while True:
-                if sector[1] > max(sim_rec[3],sim_rec[2]):
+                
+                if sector[1] > max(sim_rec[3],sim_rec[2]) * 2:
+                    sector[1] = max(sim_rec[3],sim_rec[2])
                     rays.append(sector)
                     break
                 
                 if march_amount <= tolerance:
                     # for i in range(split_amount):
-                    new_sectors.append([point,sector[1],to_radian(sector[2] + sector[3]/4),sector[3]/2,sector[4] - 1])
-                    new_sectors.append([point,sector[1],to_radian(sector[2] - sector[3]/4),sector[3]/2,sector[4] - 1])
+                    initial_split = bifurcate_sectors([sector])
+                    bifurcated_sectors = [initial_split[0],initial_split[1]]
+                    
+                    for _ in range(split_amount - 1):
+                        n_bifurcated_sectors = []
+                        for bisector in bifurcate_sectors(bifurcated_sectors):
+                            n_bifurcated_sectors.append(bisector)
+                        bifurcated_sectors = n_bifurcated_sectors
+                        
+                    for bisector in bifurcated_sectors:
+                        new_sectors.append(bisector)
                     break
 
                 if not does_sector_intersect_obstacles(sector):
                     sector[1] += march_amount
                 else:
                     sector[1] -= march_amount
-                    march_amount /= 2 # quick half
+                    march_amount = march_amount/2 # quick half
                     
         sectors = new_sectors
     return rays
@@ -259,12 +368,20 @@ def make_light_gif(sector,res_rec,sim_rec,frame_count):
         sector[2] = to_radian(sector[2])
         # sector[3] = sin(((f * 2 * pi)/frame_count) - (pi/2)) * (pi) + pi
         print((f/frame_count) * 100)
-        
+        # print("getting rays")
         sectors = get_rays(sector[0],sector[2],sector[3],sim_rec)
+        # print("drawng sectors")
         colors = get_n_colors(len(sectors))
         for i,sector_1 in enumerate(sectors):
-            draw_sector(sector_1,image_data,res_rec,sim_rec,colors[i])
-            
+            draw_sector(sector_1,image_data,res_rec,sim_rec,rainbow(sector_1[4],5))
+        # print("drawng lines")
+        
+        
+        # for i,sector_1 in enumerate(sectors):
+        #     lines = approx_sector_with_lines(sector_1,3)
+        #     for line in lines:
+        #         draw_line(line,image_data,res_rec,sim_rec,[255,255,255],0.5)
+        
         image = Image.fromarray(image_data)
         frames.append(image)
         
@@ -292,8 +409,8 @@ def make_light_gif(sector,res_rec,sim_rec,frame_count):
 
 chloe = np.asarray(Image.open("flashlight/chloe_512.png"))
 
-    
-make_light_gif(sector,res_rec,sim_rec,60)
+# make_gif(sector,res_rec,sim_rec,1)
+make_light_gif(sector,res_rec,sim_rec,120)
     
 
 
