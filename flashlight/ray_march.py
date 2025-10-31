@@ -2,8 +2,8 @@ from math import pi,atan2,cos,sin,ceil
 import numpy as np
 from PIL import Image
 
-sector = [[0.5,0.5],0.45,pi/2,pi/2]
-res_rec = [0,0,512,512]
+sector = [[0.5,0.5],0.45,0,pi]
+res_rec = [0,0,64,64]
 sim_rec = [0.0,0.0,1,1]
 obstacles = [[[0.2,0.2],[0.2,0.8]]]
 
@@ -71,7 +71,7 @@ def quadrant(angle):
         return 2
     if angle >= pi and angle < 3 * pi/2:
         return 3
-    if angle >=  3 * pi/2 and angle < 2 * pi:
+    if angle >=  3 * pi/2 and angle <= 2 * pi:
         return 4
 
 # center, radius angle, viewcone
@@ -149,7 +149,7 @@ def draw_line(line,image_data,res_rec,sim_rec,color,width = 1):
         max[1] = line[1][1]
         min[1] = line[0][1]
         
-    res = int(res_rec[3] * 180/512)
+    res = 80#int(res_rec[3] * 180/512)
 
     angle = atan2(line[1][1] - line[0][1],line[1][0] - line[0][0]) 
     dist = get_dist(max,min)
@@ -175,63 +175,73 @@ def draw_line(line,image_data,res_rec,sim_rec,color,width = 1):
                     break
     
 def draw_sector(sector,image_data,res_rec,sim_rec,inside_color):
-    theta1 = to_radian(sector[2] + sector[3]/2)
-    theta2 = to_radian(sector[2] - sector[3]/2)
-    theat1_point = [cos(theta1) * sector[1] + sector[0][0],sin(theta1) * sector[1] + sector[0][1]]
+    theta1 = to_radian(sector[2] + sector[3]/2) + pi/2
+    theta2 = to_radian(sector[2] - sector[3]/2) + pi/2
     theat2_point = [cos(theta2) * sector[1] + sector[0][0],sin(theta2) * sector[1] + sector[0][1]]
-    
+    theat1_point = [cos(theta1) * sector[1] + sector[0][0],sin(theta1)  * sector[1] + sector[0][1]]
+    # theta1 += pi/2
+    # theta2 += pi/2
+
     if quadrant(theta1) == 1:
         if quadrant(theta2) == 1:
             x_bounds = [sector[0][0],theat2_point[0]]
             y_bounds = [theat1_point[1],sector[0][1]]
+            print("11")
         elif quadrant(theta2) == 2:
-            x_bounds = [sector[0][0] - sector[0][1],sector[0][0] + sector[1]]
-            y_bounds = [max(theat1_point[1],theat2_point[1]),sector[0][1] + sector[1]]
+            x_bounds = [sector[0][0] - sector[1],sector[0][0] + sector[1]]
+            y_bounds = [sector[0][1] - sector[1],max(theat1_point[1],theat2_point[1])]
         elif quadrant(theta2) == 3:
             x_bounds = [theat2_point[0],sector[0][0] + sector[1]]
-            y_bounds = [theat1_point[1],sector[0][1] + sector[1]]
+            y_bounds = [sector[0][1] - sector[1],theat1_point[1]]
         elif quadrant(theta2) == 4:
             x_bounds = [sector[0][0],sector[0][0] + sector[1]]
-            y_bounds = [theat1_point[1],theat2_point[1]]
+            y_bounds = [theat2_point[1],theat1_point[1]]
+             #43
     elif quadrant(theta1) == 2:
         if quadrant(theta2) == 1:
             x_bounds = [theat1_point[0],theat2_point[0]]
-            y_bounds = [sector[0][1] - sector[1],sector[0][1]]
+            y_bounds = [sector[0][1],sector[0][1] + sector[1]] #14
         elif quadrant(theta2) == 2:
             x_bounds = [theat1_point[0],sector[0][0]]
             y_bounds = [theat2_point[1],sector[0][1]]
+            print("22")
         elif quadrant(theta2) == 3:
             x_bounds = [min(theat2_point[0],theat1_point[0]),sector[0][0] + sector[1]]
             y_bounds = [sector[0][1] - sector[1],sector[0][1] + sector[1]]
         elif quadrant(theta2) == 4:
             x_bounds = [theat1_point[0],sector[0][0] + sector[1]]
-            y_bounds = [sector[0][1] - sector[1],theat2_point[1]]
+            y_bounds = [theat2_point[1],sector[0][1] + sector[1]]
     elif quadrant(theta1) == 3:
         if quadrant(theta2) == 1:
             x_bounds = [sector[0][0] - sector[1],theat2_point[0]]
-            y_bounds = [sector[0][1] - sector[1],theat1_point[1]]
+            y_bounds = [theat1_point[1],sector[0][1] + sector[1]]
         elif quadrant(theta2) == 2:
             x_bounds = [sector[0][0] - sector[1],sector[0][0]]
-            y_bounds = [theat2_point[1],theat1_point[1]]
+            y_bounds = [theat1_point[1],theat2_point[1]]
+          # 21
         elif quadrant(theta2) == 3:
             x_bounds = [theat2_point[0],sector[0][0]]
             y_bounds = [sector[0][0],theat1_point[1]]
+            print("33")
         elif quadrant(theta2) == 4:
             x_bounds = [sector[0][0] - sector[1],sector[0][0] + sector[1]]
-            y_bounds = [sector[0][1] - sector[1],max(theat1_point[1],theat2_point[1])]
+            y_bounds = [min(theat1_point[1],theat2_point[1]),sector[0][1] + sector[1]]
+            
     elif quadrant(theta1) == 4:
          if quadrant(theta2) == 1:
             x_bounds = [sector[0][0] - sector[1],max(theat1_point[0],theat2_point[0])]
             y_bounds = [sector[0][1] - sector[1],sector[0][1] + sector[1]]
          elif quadrant(theta2) == 2:
             x_bounds = [sector[0][0] - sector[1],theat1_point[0]]
-            y_bounds = [theat2_point[1],sector[0][1] + sector[1]]
+            y_bounds = [sector[0][1] - sector[1],theat2_point[1]]
          elif quadrant(theta2) == 3:
             x_bounds = [theat2_point[0],theat1_point[0]]
-            y_bounds = [sector[0][1],sector[0][1] + sector[1]]
+            y_bounds = [sector[0][1] - sector[1],sector[0][1],sector[0][1]]
+             # 32
          elif quadrant(theta2) == 4:
             x_bounds = [sector[0][0],theat1_point[0]]
             y_bounds = [sector[0][1],theat2_point[1]]
+
             
             
             
@@ -243,42 +253,95 @@ def draw_sector(sector,image_data,res_rec,sim_rec,inside_color):
     
     # x_bounds = [sector[0][0] - sector[1],sector[0][0] + sector[1]]
     # y_bounds = [sector[0][1] - sector[1],sector[0][1] + sector[1]]
-     
-     
     
-    for y in range(int(clamp((y_bounds[0]/sim_rec[3]) * res_rec[3],0,res_rec[3] - 1)),int(clamp(((y_bounds[1] + 1)/sim_rec[3]) * res_rec[3],0,res_rec[3]))):
-        for x in range(int(clamp((x_bounds[0]/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1)),int(clamp(((x_bounds[1] + 1)/sim_rec[2]) * res_rec[2],0,res_rec[2]))):
-            x1 = ((x/res_rec[2]) * sim_rec[2]) + sim_rec[0]
-            y1 = ((y/res_rec[3]) * sim_rec[3]) + sim_rec[1]
-            point = [x1,y1]
+    # draw_line([[x_bounds[0],y_bounds[0]],[x_bounds[1],y_bounds[1]]],image_data,res_rec,sim_rec,[125,125,125])
+     
+    # print(int(clamp((y_bounds[0]/sim_rec[3]) * res_rec[3],0,res_rec[3] - 1)))
+    
+    
+    y1 = int(clamp(((y_bounds[0])/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1))
+    y2 = int(clamp(((y_bounds[1])/sim_rec[2]) * res_rec[2],0,res_rec[2]))
+    x1 = int(clamp(((x_bounds[0])/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1))
+    x2 = int(clamp(((x_bounds[1])/sim_rec[2]) * res_rec[2],0,res_rec[2]))
+    # print(sector[0][0],x1)
+    color1 = rainbow(quadrant(theta1) - 1,4)
+    color2 = rainbow(quadrant(theta2) - 1,4)
+
+    draw_line([[x_bounds[0],y_bounds[0]],[x_bounds[1],y_bounds[0]]],image_data,res_rec,sim_rec,color1)
+    draw_line([[x_bounds[1],y_bounds[0]],[x_bounds[1],y_bounds[1]]],image_data,res_rec,sim_rec,color2)
+    draw_line([[x_bounds[1],y_bounds[1]],[x_bounds[0],y_bounds[1]]],image_data,res_rec,sim_rec,color2)
+    draw_line([[x_bounds[0],y_bounds[1]],[x_bounds[0],y_bounds[0]]],image_data,res_rec,sim_rec,color1)
+    
+    
+    # x1 = int(clamp(((sector[0][0] - sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1))
+    # x2 = int(clamp(((sector[0][0] + sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2]))
+    # y1 = int(clamp(((sector[0][1] - sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1))
+    # y2 = int(clamp(((sector[0][1] + sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2]))
+    
+    # print("x1",x1)
+    # print("x2",x2)
+    
+    # print("y1",y1)
+    # print("y2",y2)
+    
+    for y in range(y1,y2):
+        for x in range(x1,x2):
+            
+            point_x = ((x/res_rec[2]) * sim_rec[2]) + sim_rec[0]
+            point_y = ((y/res_rec[3]) * sim_rec[3]) + sim_rec[1]
+            point = [point_x,point_y]
             if is_point_in_sector(sector,point):
                 for i in range(3):
                     image_data[x][y][i] = inside_color[i]
             # else:
             #     for i in range(3):
             #         image_data[x][y][i] = outside_color[i]
+     
+    theta1 = to_radian(sector[2] + sector[3]/2)  + pi/2
+    theta2 = to_radian(sector[2] - sector[3]/2) + pi/2
+    theat2_point = [cos(theta2 ) * sector[1] + sector[0][0],sin(theta2) * sector[1] + sector[0][1]]
+    theat1_point = [cos(theta1) * sector[1] + sector[0][0],sin(theta1)  * sector[1] + sector[0][1]]
+           
+    draw_line([[sector[0][0],sector[0][1]],[theat1_point[0],theat1_point[1]]],image_data,res_rec,sim_rec,[255,0,0])
+    draw_line([[sector[0][0],sector[0][1]],[theat2_point[0],theat2_point[1]]],image_data,res_rec,sim_rec,[0,0,255])
 
 def make_gif(sector,res_rec,sim_rec,frame_count):
     inside_color = [255,255,255]
-    outside_color =  [0,0,0]
+    # outside_color =  [0,0,0]
     
     frames = list()
     for f in range(frame_count):
 
         image_data = np.empty((res_rec[2],res_rec[3],3),dtype=np.uint8)
         image_data.fill(0)  
-        # sector[2] += (4 * pi)/frame_count
-        # sector[2] = to_radian(sector[2])
-        # sector[3] = sin(((f * 2 * pi)/frame_count) - (pi/2)) * (pi) + pi
+        sector[2] += (2 * pi)/frame_count
+        sector[2] = to_radian(sector[2])
+        sector[3] = sin(((f * 2 * pi)/frame_count) - (pi/2)) * (pi/2) + (pi)
         print((f/frame_count) * 100)
 
         draw_sector(sector,image_data,res_rec,sim_rec,inside_color)
                         
-        lines = approx_sector_with_lines(sector,int(sector[3]//(2*pi/35) + 1))      
-        colors  = get_n_colors(int(sector[3]//(2*pi/35) + 3))      
-        for i,line in enumerate(lines):
-            draw_line(line,image_data,res_rec,sim_rec,colors[i],4)
-            
+        # lines = approx_sector_with_lines(sector,int(sector[3]//(2*pi/35) + 1))      
+        # colors  = get_n_colors(int(sector[3]//(2*pi/35) + 3))      
+        # for i,line in enumerate(lines):
+        #     draw_line(line,image_data,res_rec,sim_rec,colors[i],4)
+        
+        # theta1 = to_radian(sector[2] + sector[3]/2) + pi/2
+        # theta2 = to_radian(sector[2] - sector[3]/2) + pi/2
+        # theat1_point = [cos(theta1) * sector[1] + sector[0][0],sin(theta1) * sector[1] + sector[0][1]]
+        # theat2_point = [cos(theta2) * sector[1] + sector[0][0],sin(theta2) * sector[1] + sector[0][1]]
+        
+        # color = rainbow(quadrant(theta1 - pi/2) - 1,4)
+        # #red 1
+        # #green 2
+        # # cyan 3
+        # # purple 4
+        
+        # draw_line([[sector[0][0],sector[0][1]],[theat1_point[0],theat1_point[1]]],image_data,res_rec,sim_rec,color)
+        # color = rainbow(quadrant(theta2 - pi/2) - 1,4)
+        # draw_line([[sector[0][0],sector[0][1]],[theat2_point[0],theat2_point[1]]],image_data,res_rec,sim_rec,color)
+        
+        
         image = Image.fromarray(image_data)
         frames.append(image)
         
@@ -407,10 +470,51 @@ def make_light_gif(sector,res_rec,sim_rec,frame_count):
 
 
 
-chloe = np.asarray(Image.open("flashlight/chloe_512.png"))
 
-# make_gif(sector,res_rec,sim_rec,1)
-make_light_gif(sector,res_rec,sim_rec,120)
+
+# make_light_gif(sector,res_rec,sim_rec,120)
     
+def test_gif(sector,res_rec,sim_rec):
+    inside_color = [0,0,0]
+    # outside_color =  [0,0,0]
+    
+    frames = list()
+    x1 = int(clamp(((sector[0][0] - sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1))
+    x2 = int(clamp(((sector[0][0] + sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2]))
+    y1 = int(clamp(((sector[0][1] - sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2] - 1))
+    y2 = int(clamp(((sector[0][1] + sector[1])/sim_rec[2]) * res_rec[2],0,res_rec[2]))
+    
+    # print("x1",x1)
+    # print("x2",x2)
+    
+    # print("y1",y1)
+    # print("y2",y2)
+    
+    image_data = np.empty((res_rec[2],res_rec[3],3),dtype=np.uint8)
+    image_data.fill(255)  
+    
+    for y in range(y1,y2):
+        for x in range(x1,x2):
+            
+            point_x = ((x/res_rec[2]) * sim_rec[2]) + sim_rec[0]
+            point_y = ((y/res_rec[3]) * sim_rec[3]) + sim_rec[1]
+            point = [point_x,point_y]
+            if is_point_in_sector(sector,point):
+                for i in range(3):
+                    image_data[x][y][i] = inside_color[i]
+                image = Image.fromarray(image_data)
+                frames.append(image)
+                     
+    frames[0].save(
+        'flashlight\output.gif',
+        save_all=True,
+        append_images=frames[1:],
+        duration=50,  # Duration of each frame in milliseconds
+        loop=0      # 0 means loop indefinitely
+        )      
+    print("Done!")  
 
 
+
+# test_gif(sector,res_rec,sim_rec)
+make_gif(sector,res_rec,sim_rec,120)
