@@ -41,8 +41,7 @@ def quad(start,size,starting_point,order,map):
     else:
         for i,o in enumerate(order):   
             map[int(squares[i])] = starting_points[i]
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+
           
           
 size = 32
