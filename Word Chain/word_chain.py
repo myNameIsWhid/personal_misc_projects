@@ -16,7 +16,7 @@ for word in words.words():
     words_by_length[len(word) - 1].append(word.lower())
     
 ones = ['a','i']
-twos = ['at',"be","it","is","an","if","of","as","in","us","am"]
+twos = ['at',"be","it","is","an","if","of","as","in","us","am","by","to"]
 
 words_by_length[0] = list(words_by_length[0])
 words_by_length[0].clear()
