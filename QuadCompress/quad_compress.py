@@ -1,7 +1,7 @@
 from PIL import Image
 import numpy as np
 import math
-image = Image.open("balloon.png")
+image = Image.open("QuadCompress/night_s.png")
 data = np.asarray(image)
 
 def avg_color_of_image(image_data):
